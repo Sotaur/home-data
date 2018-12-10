@@ -78,7 +78,7 @@ app.post('/ruuvi-data', async(req, res) => {
 
         res.sendStatus(200);
     } catch (error) {
-        res.status(500).body(error);
+        res.sendStatus(500).body(error);
     }
 });
 
