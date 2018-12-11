@@ -28,25 +28,25 @@ app.post('/ruuvi-data', async(req, res) => {
 
     try {
         const device = await db(deviceTable).select().from('devices').where('deviceId', deviceId);
-        if (!device) {
+        if (!device.length) {
             const deviceInfo = await db(deviceTable).insert({
                 deviceId,
                 deviceName: ''
             });
-            deviceNum = deviceInfo.id;
+            deviceNum = deviceInfo[0];
         } else {
-            deviceNum = device.id;
+            deviceNum = device[0].id;
         }
 
         const event = await db(eventTable).insert({
             uuid: eventId,
             time
         });
-        const eventNum = event.id;
+        const eventNum = event[0];
 
         for (const tag of tagData) {
             let tagDevice = await db(deviceTable).select().from('devices').where('deviceId', tag.id);
-            if (!tagDevice) {
+            if (!tagDevice.length) {
                 tagDevice = await db(deviceTable).insert({
                     deviceId: tag.id,
                     deviceName: tag.name
@@ -54,8 +54,8 @@ app.post('/ruuvi-data', async(req, res) => {
             } else {
                 db(device).where('id', tagDevice.id).update({ deviceName: tag.name });
             }
-
-            deviceNum = tagDevice.id;
+            console.log(tagDevice);
+            deviceNum = tagDevice[0].id;
 
             await db(ruuviTable).insert({
                 seen_at: tag.updateAt,
