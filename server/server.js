@@ -18,6 +18,18 @@ const deviceTable = 'devices';
 const eventTable = 'events';
 const ruuviTable = 'ruuvi-data';
 
+app.get('/ruuvi-data', async(req, res) => {
+    // These are optional selectors
+    const columns = req.body.columns;
+    const matches = req.body.matches;
+    try {
+        const data = await db(ruuviTable).select(columns).from(deviceTable).where(matches);
+        res.send(data);
+    } catch (error) {
+        res.sendStatus(500).json(error);
+    }
+})
+
 app.post('/ruuvi-data', async(req, res) => {
     const data = req.body;
     const time = data.time;
@@ -27,7 +39,7 @@ app.post('/ruuvi-data', async(req, res) => {
     let deviceNum;
 
     try {
-        const device = await db(deviceTable).select().from('devices').where('deviceId', deviceId);
+        const device = await db(deviceTable).select().from(deviceTable).where('deviceId', deviceId);
         if (!device.length) {
             const deviceInfo = await db(deviceTable).insert({
                 deviceId,
@@ -45,7 +57,7 @@ app.post('/ruuvi-data', async(req, res) => {
         const eventNum = event[0];
 
         for (const tag of tagData) {
-            let tagDevice = await db(deviceTable).select().from('devices').where('deviceId', tag.id);
+            let tagDevice = await db(deviceTable).select().from(deviceTable).where('deviceId', tag.id);
             if (!tagDevice.length) {
                 tagDevice = await db(deviceTable).insert({
                     deviceId: tag.id,
@@ -54,7 +66,7 @@ app.post('/ruuvi-data', async(req, res) => {
             } else {
                 db(device).where('id', tagDevice.id).update({ deviceName: tag.name });
             }
-            console.log(tagDevice);
+
             deviceNum = tagDevice[0].id;
 
             await db(ruuviTable).insert({
@@ -75,11 +87,8 @@ app.post('/ruuvi-data', async(req, res) => {
             });
         }
 
-        console.log(`Added ${tagData.length} data points`);
-
         res.sendStatus(200);
     } catch (error) {
-        console.log(error);
         res.sendStatus(500).json(error);
     }
 });
