@@ -9,10 +9,13 @@ exports.up = function(knex, Promise) {
             table.increments('id').primary();
             table.string('uuid');
             table.dateTime('time');
-        }),
+        })
+    ]).then(() => {
         knex.schema.createTable('ruuvi-data', function(table) {
             table.increments('id').primary();
             table.dateTime('seen_at');
+            table.integer('deviceId');
+            table.integer('eventId');
             table.foreign('deviceId').references('id').inTable('devices');
             table.foreign('eventId').references('id').inTable('events');
             table.integer('rssi');
@@ -27,11 +30,13 @@ exports.up = function(knex, Promise) {
             table.integer('movementCounter');
             table.integer('measurementSequenceNumber');
         })
-    ])
+    })
 };
 
 exports.down = function(knex, Promise) {
     return Promise.all([
-        knex.schema.dropTable('ruuvi-data')
+        knex.schema.dropTable('ruuvi-data'),
+        knex.schema.dropTable('devices'),
+        knex.schema.dropTable('events')
     ])
 };
