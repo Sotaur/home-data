@@ -40,7 +40,7 @@ app.post('/ruuvi-data', async(req, res) => {
     const tagData = data.tags;
     let deviceNum;
 
-    fs.writeFile(`~/${Date.now()}.json`, data);
+    fs.writeFileSync(`../${Date.now()}.json`, data);
 
     try {
         const device = await db(deviceTable).select().from(deviceTable).where('deviceId', deviceId);
