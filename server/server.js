@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const fs = require('fs');
+
 const app = express();
 const port = 8080;
 app.use(bodyParser.json());
@@ -37,6 +39,8 @@ app.post('/ruuvi-data', async(req, res) => {
     const eventId = data.eventId;
     const tagData = data.tags;
     let deviceNum;
+
+    fs.writeFile(`~/${Date.now()}.json`, data);
 
     try {
         const device = await db(deviceTable).select().from(deviceTable).where('deviceId', deviceId);
