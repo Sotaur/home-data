@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 
-const fs = require('fs');
-
 const app = express();
 const port = 8080;
 app.use(bodyParser.json());
@@ -17,7 +15,6 @@ const config = require('../knexfile')[env];
 const db = require('knex')(config);
 
 const deviceTable = 'devices';
-const eventTable = 'events';
 const ruuviTable = 'ruuvi-data';
 
 app.get('/ruuvi-data', async(req, res) => {
@@ -33,14 +30,11 @@ app.get('/ruuvi-data', async(req, res) => {
 })
 
 app.post('/ruuvi-data', async(req, res) => {
-    const data = req.body;
-    const time = data.time;
-    const deviceId = data.deviceId;
-    const eventId = data.eventId;
-    const tagData = data.tags;
+    const body = req.body;
+    const time = body.time;
+    const data = body.data;
+    const deviceId = data.mac;
     let deviceNum;
-
-    fs.writeFileSync(`../${Date.now()}.json`, JSON.stringify(data));
 
     try {
         const device = await db(deviceTable).select().from(deviceTable).where('deviceId', deviceId);
@@ -54,42 +48,18 @@ app.post('/ruuvi-data', async(req, res) => {
             deviceNum = device[0].id;
         }
 
-        const event = await db(eventTable).insert({
-            uuid: eventId,
-            time
+        await db(ruuviTable).insert({
+            seen_at: time,
+            deviceId: deviceNum,
+            rssi: body.rssi,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            pressure: data.pressure,
+            accelX: data.accelerationX,
+            accelY: data.accelerationY,
+            accelZ: data.accelerationZ,
+            voltage: data.battery,
         });
-        const eventNum = event[0];
-
-        for (const tag of tagData) {
-            let tagDevice = await db(deviceTable).select().from(deviceTable).where('deviceId', tag.id);
-            if (!tagDevice.length) {
-                tagDevice = await db(deviceTable).insert({
-                    deviceId: tag.id,
-                    deviceName: tag.name
-                });
-            } else {
-                db(device).where('id', tagDevice.id).update({ deviceName: tag.name });
-            }
-
-            deviceNum = tagDevice[0].id;
-
-            await db(ruuviTable).insert({
-                seen_at: tag.updateAt,
-                deviceId: deviceNum,
-                eventId: eventNum,
-                rssi: tag.rssi,
-                temperature: tag.temperature,
-                humidity: tag.humidity,
-                pressure: tag.pressure,
-                accelX: tag.accelX,
-                accelY: tag.accelY,
-                accelZ: tag.accelZ,
-                voltage: tag.voltage,
-                txPower: tag.txPower,
-                movementCounter: tag.movementCounter,
-                measurementSequenceNumber: tag.measurementSequenceNumber
-            });
-        }
 
         res.sendStatus(200);
     } catch (error) {
