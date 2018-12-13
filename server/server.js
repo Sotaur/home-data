@@ -19,7 +19,7 @@ const moment = require('moment');
 const deviceTable = 'devices';
 const ruuviTable = 'ruuvi-data';
 
-app.get('/ruuvi-data', async(req, res) => {
+app.get('/ruuvi-data', async(req, res, next) => {
     // These are optional selectors
     const columns = req.body.columns;
     const matches = req.body.matches;
@@ -27,11 +27,11 @@ app.get('/ruuvi-data', async(req, res) => {
         const data = await db(ruuviTable).select(columns).from(deviceTable).where(matches);
         res.send(data);
     } catch (error) {
-        res.sendStatus(500).json(error);
+        next(error);
     }
-})
+});
 
-app.post('/ruuvi-data', async(req, res) => {
+app.post('/ruuvi-data', async(req, res, next) => {
     const body = req.body;
     const time = body.time;
     const data = body.data;
@@ -65,9 +65,13 @@ app.post('/ruuvi-data', async(req, res) => {
 
         res.sendStatus(200);
     } catch (error) {
-        res.sendStatus(500).json(error);
+        next(error);
     }
 });
 
+app.use((error, req, res) => {
+    console.error(error);
+    res.send(error.message);
+});
 
 app.listen(port);
