@@ -14,6 +14,8 @@ const env = process.env.NODE_ENV || 'development';
 const config = require('../knexfile')[env];
 const db = require('knex')(config);
 
+const moment = require('moment');
+
 const deviceTable = 'devices';
 const ruuviTable = 'ruuvi-data';
 
@@ -49,7 +51,7 @@ app.post('/ruuvi-data', async(req, res) => {
         }
 
         await db(ruuviTable).insert({
-            seen_at: time,
+            seen_at: moment(time).format('YYYY-MM-DD HH:mm:SS'),
             deviceId: deviceNum,
             rssi: body.rssi,
             temperature: data.temperature,
